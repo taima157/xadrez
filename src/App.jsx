@@ -19,9 +19,27 @@ function App() {
     setPieceToPlace({ ...pieceToPlace, position: array });
   }
 
+  const numbers = [1, 2, 3, 4, 5, 6, 7, 8];
+
+  const letters = ["a", "b", "c", "d", "e", "f", "g", "h"]
+
   return (
     <div className="App">
-      <Board />
+      <div className="full-board">
+        <div className="top-board">
+          <div className="left-board">
+            {numbers.map((number, index) => {
+              return <div key={index} className="number">{number}</div>
+            })}
+          </div>
+          <Board />
+        </div>
+        <div className="bottom-board">
+          {letters.map((letter, index) => {
+            return <div key={index} className="letter">{letter}</div>
+          })}
+        </div>
+      </div>
       <div className="menu-config">
         <button onClick={mountBoard}>Resetar Tabuleiro</button>
         <button onClick={clearBoard}>Limpar Tabuleiro</button>

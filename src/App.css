@@ -3,6 +3,48 @@
   gap: 50px;
 }
 
+.full-board {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.top-board {
+  display: flex;
+  height: 100%;
+  gap: 8px;
+}
+
+.left-board {
+  display: flex;
+  flex-direction: column-reverse;
+}
+
+.number {
+  height: 62px;
+  width: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+}
+
+.bottom-board {
+  display: flex;
+  justify-content: flex-end;
+  padding-right: 2px;
+}
+
+.letter {
+  height: 10x;
+  width: 62px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-transform: uppercase;
+  font-weight: bold;
+}
+
 .menu-config {
   display: flex;
   flex-direction: column;
