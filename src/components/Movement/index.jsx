@@ -1,9 +1,18 @@
 import { useContext } from "react";
 import { ChessContext } from "../../context/chess";
-import "./style.css"
+import Piece from "../Piece";
+import "./style.css";
 
-export default function Movement({movement}) {
-  const {makeMove} = useContext(ChessContext)
+export default function Movement({ movement }) {
+  const { makeMove } = useContext(ChessContext);
 
-  return <div className="Movement" onClick={() => makeMove(movement)}></div>
+  if (movement.pieceOnCapture) {
+    return (
+      <div className="Movement red" onClick={() => makeMove(movement)}>
+        <Piece piece={movement.pieceOnCapture} />
+      </div>
+    );
+  } else {
+    return <div className="Movement green" onClick={() => makeMove(movement)}></div>;
+  }
 }

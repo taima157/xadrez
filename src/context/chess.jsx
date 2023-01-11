@@ -121,7 +121,11 @@ export function ChessProvider({ children }) {
         if (square.type !== "move") {
           board[rindex][cindex] = square;
         } else {
-          board[rindex][cindex] = [];
+          if (square.pieceOnCapture) {
+            board[rindex][cindex] = square.pieceOnCapture;
+          } else {
+            board[rindex][cindex] = [];
+          }
         }
       });
     });
@@ -167,11 +171,16 @@ export function ChessProvider({ children }) {
       isInsideTheBoard(piece.position[1] + quantY)
     ) {
       if (occupiedSquare(movePosition).isOccupied) {
-
         if (occupiedSquare(movePosition).color !== piece.color) {
-          handleBoard[movePosition[1]][movePosition[0]].threatened = movement
+          let pieceOnCapture = handleBoard[movePosition[1]][movePosition[0]];
+          handleBoard[movePosition[1]][movePosition[0]] = movement;
 
-          return true;
+          handleBoard[movePosition[1]][movePosition[0]].pieceOnCapture =
+            pieceOnCapture;
+
+          if (piece.name !== "pawn") {
+            return true;
+          }
         } else {
           return true;
         }
@@ -181,6 +190,52 @@ export function ChessProvider({ children }) {
     }
 
     setBoard(handleBoard);
+  }
+
+  function makeMove(positionMove) {
+    clearMoves();
+
+    let piece =
+      board[positionMove.piecePosition[1]][positionMove.piecePosition[0]];
+
+    piece.position = positionMove.movePosition;
+
+    removePiece(positionMove.piecePosition);
+    addPiece(piece);
+  }
+
+  function addPiece(piece) {
+    let handleBoard = [...board];
+
+    board[piece.position[1]][piece.position[0]] = piece;
+
+    setBoard(handleBoard);
+  }
+
+  function removePiece(position) {
+    let handleBoard = [...board];
+
+    handleBoard[position[1]][position[0]] = [];
+
+    setBoard(handleBoard);
+  }
+
+  function pawnCapture(piece, diagonals) {
+    diagonals.forEach((diagonal) => {
+      if (
+        isInsideTheBoard(piece.position[0] + diagonal[0]) &&
+        isInsideTheBoard(piece.position[1] + diagonal[1])
+      ) {
+        if (
+          occupiedSquare([
+            piece.position[0] + diagonal[0],
+            piece.position[1] + diagonal[1],
+          ]).isOccupied
+        ) {
+          movement(piece, diagonal[0], diagonal[1]);
+        }
+      }
+    });
   }
 
   function pawnMove(piece) {
@@ -194,8 +249,21 @@ export function ChessProvider({ children }) {
           }
         }
       } else {
-        movement(piece, 0, -1);
+        if (isInsideTheBoard(piece.position[1] - 1)) {
+          if (
+            !occupiedSquare([piece.position[0], piece.position[1] - 1])
+              .isOccupied
+          ) {
+            movement(piece, 0, -1);
+          }
+        }
       }
+      let diagonals = [
+        [1, -1],
+        [-1, -1],
+      ];
+
+      pawnCapture(piece, diagonals);
     } else {
       if (piece.position[1] === 1) {
         let bottom = false;
@@ -206,8 +274,22 @@ export function ChessProvider({ children }) {
           }
         }
       } else {
-        movement(piece, 0, 1);
+        if (isInsideTheBoard(piece.position[1] + 1)) {
+          if (
+            !occupiedSquare([piece.position[0], piece.position[1] + 1])
+              .isOccupied
+          ) {
+            movement(piece, 0, 1);
+          }
+        }
       }
+
+      let diagonals = [
+        [-1, 1],
+        [1, 1],
+      ];
+
+      pawnCapture(piece, diagonals);
     }
   }
 
@@ -325,34 +407,6 @@ export function ChessProvider({ children }) {
         kingMove(piece);
         break;
     }
-  }
-
-  function makeMove(positionMove) {
-    let piece =
-      board[positionMove.piecePosition[1]][positionMove.piecePosition[0]];
-
-    piece.position = positionMove.movePosition;
-
-    addPiece(piece);
-    removePiece(positionMove.piecePosition);
-
-    clearMoves();
-  }
-
-  function addPiece(piece) {
-    let handleBoard = [...board];
-
-    handleBoard[piece.position[1]][piece.position[0]] = piece;
-
-    setBoard(handleBoard);
-  }
-
-  function removePiece(position) {
-    let handleBoard = [...board];
-
-    handleBoard[position[1]][position[0]] = [];
-
-    setBoard(handleBoard);
   }
 
   useEffect(() => {
