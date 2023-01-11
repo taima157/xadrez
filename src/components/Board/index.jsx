@@ -1,6 +1,7 @@
-import Square from "../Square";
 import { ChessContext } from "../../context/chess";
 import { useContext, useEffect } from "react";
+import Piece from "../Piece";
+import Movement from "../Movement";
 
 export default function Board() {
   const { board } = useContext(ChessContext);
@@ -10,26 +11,33 @@ export default function Board() {
       {board.map((row, rowindex) => {
         return (
           <div key={rowindex} className="row-board">
-            {row.map((col, colindex) => {
+            {row.map((item, colindex) => {
+              let classSquare = "";
+
+              if (rowindex % 2 == 0) {
+                if (colindex % 2 == 0) {
+                  classSquare = "square white";
+                } else {
+                  classSquare = "square black";
+                }
+              } else {
+                if (colindex % 2 == 0) {
+                  classSquare = "square black";
+                } else {
+                  classSquare = "square white";
+                }
+              }
+
               return (
-                <div key={colindex} className="col-board" >
-                  {rowindex % 2 == 0 ? (
-                    <Square
-                      className={`square ${
-                        colindex % 2 == 0 ? "white" : "black"
-                      }`}
-                      piece={col}
-                    />
-                  ) : (
-                    <Square
-                      className={`square ${
-                        colindex % 2 == 0 ? "black" : "white"
-                      }`}
-                      piece={col}
-                    />
-                  )}
+                <div key={colindex} className={classSquare}>
+                  {item.type == "piece" ? (
+                    <Piece piece={item} />
+                  ) : item.type == "move" ? (
+                    <Movement movement={item} />
+                  ) : null}
                 </div>
               );
+
             })}
           </div>
         );

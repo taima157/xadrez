@@ -6,7 +6,7 @@ import { ChessContext } from "./context/chess";
 function App() {
   const { clearBoard, mountBoard, addPiece } = useContext(ChessContext);
 
-  const [piece, setPiece] = useState({
+  const [pieceToPlace, setPieceToPlace] = useState({
     name: "pawn",
     type: "piece",
     color: "white",
@@ -14,9 +14,9 @@ function App() {
   });
 
   function positionHandler(e, index) {
-    let array = piece.position;
+    let array = pieceToPlace.position;
     array[index] = Number(e.target.value);
-    setPiece({ ...piece, position: array });
+    setPieceToPlace({ ...pieceToPlace, position: array });
   }
 
   return (
@@ -28,7 +28,7 @@ function App() {
         <div className="add-piece">
           <div className="piece-type">
             <select
-              onChange={(e) => setPiece({ ...piece, name: e.target.value })}
+              onChange={(e) => setPieceToPlace({ ...pieceToPlace, name: e.target.value })}
             >
               <option value="pawn">Peão</option>
               <option value="king">Rei</option>
@@ -41,7 +41,7 @@ function App() {
 
           <div className="piece-color">
             <select
-              onChange={(e) => setPiece({ ...piece, color: e.target.value })}
+              onChange={(e) => setPieceToPlace({ ...pieceToPlace, color: e.target.value })}
             >
               <option value="white">Branco</option>
               <option value="black">Preto</option>
@@ -53,7 +53,7 @@ function App() {
               X
               <input
                 type="number"
-                value={piece.position[0]}
+                value={pieceToPlace.position[0]}
                 onChange={(e) => positionHandler(e, 0)}
                 min={0}
                 max={7}
@@ -63,7 +63,7 @@ function App() {
               Y
               <input
                 type="number"
-                value={piece.position[1]}
+                value={pieceToPlace.position[1]}
                 onChange={(e) => positionHandler(e, 1)}
                 min={0}
                 max={7}
@@ -71,7 +71,7 @@ function App() {
             </label>
           </div>
 
-          <button onClick={() => addPiece(piece)}>Add Peça</button>
+          <button onClick={() => addPiece(pieceToPlace)}>Add Peça</button>
         </div>
       </div>
     </div>

@@ -127,6 +127,29 @@ export function ChessProvider({ children }) {
     });
   }
 
+  function occupiedSquare(position) {
+    let square = board[position[1]][position[0]];
+
+    if (square.length === 0) {
+      return {
+        isOccupied: false,
+      };
+    } else {
+      return {
+        isOccupied: true,
+        color: square.color,
+      };
+    }
+  }
+
+  function isInsideTheBoard(index) {
+    if (index >= 0 && index < board.length) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
   function movement(piece, quantX, quantY) {
     const handleBoard = [...board];
 
@@ -144,7 +167,14 @@ export function ChessProvider({ children }) {
       isInsideTheBoard(piece.position[1] + quantY)
     ) {
       if (occupiedSquare(movePosition).isOccupied) {
-        return true;
+
+        if (occupiedSquare(movePosition).color !== piece.color) {
+          handleBoard[movePosition[1]][movePosition[0]].threatened = movement
+
+          return true;
+        } else {
+          return true;
+        }
       } else {
         handleBoard[movePosition[1]][movePosition[0]] = movement;
       }
@@ -179,11 +209,6 @@ export function ChessProvider({ children }) {
         movement(piece, 0, 1);
       }
     }
-  }
-
-  function queenMove(piece) {
-    rookMove(piece);
-    bishopMove(piece);
   }
 
   function knightMove(piece) {
@@ -266,8 +291,13 @@ export function ChessProvider({ children }) {
     ];
 
     movesPosition.forEach((position) => {
-      movement(piece, position[0], position[1])
-    })
+      movement(piece, position[0], position[1]);
+    });
+  }
+
+  function queenMove(piece) {
+    rookMove(piece);
+    bishopMove(piece);
   }
 
   function selectPiece(piece) {
@@ -323,29 +353,6 @@ export function ChessProvider({ children }) {
     handleBoard[position[1]][position[0]] = [];
 
     setBoard(handleBoard);
-  }
-
-  function occupiedSquare(position) {
-    let square = board[position[1]][position[0]];
-
-    if (square.length === 0) {
-      return {
-        isOccupied: false,
-      };
-    } else {
-      return {
-        isOccupied: true,
-        color: square.color,
-      };
-    }
-  }
-
-  function isInsideTheBoard(index) {
-    if (index >= 0 && index < board.length) {
-      return true;
-    } else {
-      return false;
-    }
   }
 
   useEffect(() => {

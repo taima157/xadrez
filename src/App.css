@@ -4,39 +4,39 @@
 }
 
 .board {
-  width: 402px;
-  height: 402px;
+  width: 498px;
+  height: 498px;
   display: flex;
   flex-direction: column;
   border: 1px solid #000;
 }
 
 .row-board {
-  width: 400px;
-  height: 50px;
+  width: 498px;
+  height: 62px;
   display: flex;
   
 }
 
 .col-board {
-  width: 50px;
-  height: 50px;
+  width: 62px;
+  height: 62px;
 }
 
 .square {
-  width: 50px;
-  height: 50px;
+  width: 62px;
+  height: 62px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .white {
-  background-color: #fff;
+  background-color: #d0abff;
 }
 
 .black {
-  background-color: #000;
+  background-color: #4f02ba;
   color: #fff;
 }
 
