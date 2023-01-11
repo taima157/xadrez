@@ -34,7 +34,10 @@ export default function Piece({ piece }) {
   };
 
   return (
-    <div className="Piece" onClick={() => selectPiece(piece)}>
+    <div
+      className={`Piece ${piece.select ? "piece-select" : ""}`}
+      onClick={() => selectPiece(piece)}
+    >
       <img src={piecesImages[`${piece.name}${piece.color}`]} alt="piece" />
     </div>
   );

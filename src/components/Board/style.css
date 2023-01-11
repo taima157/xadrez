@@ -1,0 +1,36 @@
+.Board {
+  width: 500px;
+  height: 500px;
+  display: flex;
+  flex-direction: column;
+  border: 2px solid #000;
+}
+
+.row-board {
+  width: 498px;
+  height: 62px;
+  display: flex;
+  
+}
+
+.col-board {
+  width: 62px;
+  height: 62px;
+}
+
+.square {
+  width: 62px;
+  height: 62px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.white {
+  background-color: #d0abff;
+}
+
+.black {
+  background-color: #4f02ba;
+  color: #fff;
+}

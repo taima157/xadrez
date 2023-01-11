@@ -79,6 +79,7 @@ export function ChessProvider({ children }) {
             type: "piece",
             color,
             position,
+            select: false,
           };
         });
       });
@@ -120,6 +121,7 @@ export function ChessProvider({ children }) {
       row.forEach((square, cindex) => {
         if (square.type !== "move") {
           board[rindex][cindex] = square;
+          board[rindex][cindex].select = false;
         } else {
           if (square.pieceOnCapture) {
             board[rindex][cindex] = square.pieceOnCapture;
@@ -158,6 +160,8 @@ export function ChessProvider({ children }) {
     const handleBoard = [...board];
 
     let movePosition = [piece.position[0] + quantX, piece.position[1] + quantY];
+
+    handleBoard[piece.position[1]][piece.position[0]].select = true;
 
     let movement = {
       name: "o",

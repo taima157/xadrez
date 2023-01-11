@@ -2,6 +2,7 @@ import { useContext } from "react";
 import { ChessContext } from "../../context/chess";
 import Piece from "../Piece";
 import "./style.css";
+import circle from "../../assets/circle.png";
 
 export default function Movement({ movement }) {
   const { makeMove } = useContext(ChessContext);
@@ -13,6 +14,10 @@ export default function Movement({ movement }) {
       </div>
     );
   } else {
-    return <div className="Movement green" onClick={() => makeMove(movement)}></div>;
+    return (
+      <div className="Movement" onClick={() => makeMove(movement)}>
+        <img src={circle} alt="circle" className="circle" />
+      </div>
+    );
   }
 }

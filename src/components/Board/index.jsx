@@ -1,13 +1,14 @@
 import { ChessContext } from "../../context/chess";
-import { useContext, useEffect } from "react";
+import { useContext } from "react";
 import Piece from "../Piece";
 import Movement from "../Movement";
+import "./style.css";
 
 export default function Board() {
   const { board } = useContext(ChessContext);
 
   return (
-    <div className="board">
+    <div className="Board">
       {board.map((row, rowindex) => {
         return (
           <div key={rowindex} className="row-board">

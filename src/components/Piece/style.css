@@ -8,6 +8,10 @@
   padding: 5px;
 }
 
+.piece-select {
+  background-color: #5fba14b1;
+}
+
 .Piece img {
   width: 90%;
   height: 90%;
