@@ -4,7 +4,8 @@ import Board from "./components/Board";
 import { ChessContext } from "./context/chess";
 
 function App() {
-  const { clearBoard, mountBoard, addPiece } = useContext(ChessContext);
+  const { clearBoard, mountBoard, addPiece, endangeredBoard } =
+    useContext(ChessContext);
 
   const [pieceToPlace, setPieceToPlace] = useState({
     name: "pawn",
@@ -21,7 +22,7 @@ function App() {
 
   const numbers = [1, 2, 3, 4, 5, 6, 7, 8];
 
-  const letters = ["a", "b", "c", "d", "e", "f", "g", "h"]
+  const letters = ["a", "b", "c", "d", "e", "f", "g", "h"];
 
   return (
     <div className="App">
@@ -29,14 +30,22 @@ function App() {
         <div className="top-board">
           <div className="left-board">
             {numbers.map((number, index) => {
-              return <div key={index} className="number">{number}</div>
+              return (
+                <div key={index} className="number">
+                  {number}
+                </div>
+              );
             })}
           </div>
           <Board />
         </div>
         <div className="bottom-board">
           {letters.map((letter, index) => {
-            return <div key={index} className="letter">{letter}</div>
+            return (
+              <div key={index} className="letter">
+                {letter}
+              </div>
+            );
           })}
         </div>
       </div>
@@ -46,7 +55,9 @@ function App() {
         <div className="add-piece">
           <div className="piece-type">
             <select
-              onChange={(e) => setPieceToPlace({ ...pieceToPlace, name: e.target.value })}
+              onChange={(e) =>
+                setPieceToPlace({ ...pieceToPlace, name: e.target.value })
+              }
             >
               <option value="pawn">Peão</option>
               <option value="king">Rei</option>
@@ -59,7 +70,9 @@ function App() {
 
           <div className="piece-color">
             <select
-              onChange={(e) => setPieceToPlace({ ...pieceToPlace, color: e.target.value })}
+              onChange={(e) =>
+                setPieceToPlace({ ...pieceToPlace, color: e.target.value })
+              }
             >
               <option value="white">Branco</option>
               <option value="black">Preto</option>
@@ -91,6 +104,17 @@ function App() {
 
           <button onClick={() => addPiece(pieceToPlace)}>Add Peça</button>
         </div>
+      </div>
+      <div className="board-danger">
+        {endangeredBoard.map((row, rindex) => {
+          return (
+            <div key={rindex} className="row-danger">
+              {row.map((item, cindex) => {
+                return <div key={cindex} className="danger-item">{item.color}</div>;
+              })}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

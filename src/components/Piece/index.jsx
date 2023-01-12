@@ -35,11 +35,12 @@ export default function Piece({ piece }) {
 
   if (piece.check && check.isCheck) {
     return (
-      <div className="Piece red"
-      onClick={() => {
-        console.log(selectPiece(piece))
-        selectPiece(piece)
-      }}>
+      <div
+        className="Piece red"
+        onClick={() => {
+          selectPiece(piece);
+        }}
+      >
         <img src={piecesImages[`${piece.name}${piece.color}`]} alt="piece" />
       </div>
     );

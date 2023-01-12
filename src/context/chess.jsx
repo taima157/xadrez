@@ -68,10 +68,22 @@ export function ChessProvider({ children }) {
 
   const [board, setBoard] = useState([]);
 
+  const [endangeredBoard, setEndangeredBoard] = useState([]);
+
   const [check, setCheck] = useState({
     isCheck: false,
     checkPosition: [],
   });
+
+  function verifyEndangereds() {
+    endangeredBoard.forEach((row) => {
+      row.forEach((item) => {
+        if (item.type === "piece") {
+          selectPiece(item, "endangered");
+        }
+      });
+    });
+  }
 
   function verifyCheck() {
     setCheck({ ...check, isCheck: false });
@@ -79,7 +91,7 @@ export function ChessProvider({ children }) {
     board.forEach((row) => {
       row.forEach((item) => {
         if (item.type === "piece") {
-          selectPiece(item);
+          selectPiece(item, "move");
           clearMoves();
         }
       });
@@ -104,6 +116,19 @@ export function ChessProvider({ children }) {
     });
 
     return handleArray;
+  }
+
+  function buildEndangeredBoard() {
+    let buildableBoard = [];
+
+    for (let i = 0; i < 8; i++) {
+      buildableBoard.push([]);
+      for (let j = 0; j < 8; j++) {
+        buildableBoard[i].push([]);
+      }
+    }
+
+    setEndangeredBoard(buildableBoard);
   }
 
   function mountBoard() {
@@ -132,6 +157,16 @@ export function ChessProvider({ children }) {
     }
 
     setBoard(buildableBoard);
+  }
+
+  function clearEndangered() {
+    endangeredBoard.forEach((row, rindex) => {
+      row.forEach((square, cindex) => {
+        if (square.type === "endangered") {
+          endangeredBoard[rindex][cindex] = [];
+        }
+      });
+    });
   }
 
   function clearMoves() {
@@ -179,8 +214,8 @@ export function ChessProvider({ children }) {
   }
 
   function movement(piece, quantX, quantY) {
-    const handleBoard = [...board];
-
+    let handleBoard = [...board];
+    let handleEndangeredBoard = [...endangeredBoard];
     let movePosition = [piece.position[0] + quantX, piece.position[1] + quantY];
 
     handleBoard[piece.position[1]][piece.position[0]].select = true;
@@ -190,6 +225,12 @@ export function ChessProvider({ children }) {
       type: "move",
       movePosition,
       piecePosition: piece.position,
+    };
+
+    let endangered = {
+      name: "x",
+      type: "endangered",
+      color: piece.color,
     };
 
     if (
@@ -204,6 +245,8 @@ export function ChessProvider({ children }) {
           handleBoard[movePosition[1]][movePosition[0]].pieceOnCapture =
             pieceOnCapture;
 
+          handleEndangeredBoard[movePosition[1]][movePosition[0]] = endangered;
+
           if (
             handleBoard[movePosition[1]][movePosition[0]].pieceOnCapture
               .name === "king" &&
@@ -214,7 +257,7 @@ export function ChessProvider({ children }) {
               isCheck: true,
               checkPosition: [movePosition[0], movePosition[1]],
             });
-            return "check";
+            return;
           }
 
           if (piece.name !== "pawn") {
@@ -225,14 +268,51 @@ export function ChessProvider({ children }) {
         }
       } else {
         handleBoard[movePosition[1]][movePosition[0]] = movement;
+
+        function pawnEndangered(diagonals) {
+          diagonals.forEach((diagonal) => {
+            if (
+              isInsideTheBoard(piece.position[1] + diagonal[1]) &&
+              isInsideTheBoard(piece.position[0] + diagonal[0])
+            ) {
+              return (handleEndangeredBoard[piece.position[1] + diagonal[1]][
+                piece.position[0] + diagonal[0]
+              ] = endangered);
+            }
+          });
+        }
+
+        if (piece.name !== "pawn") {
+          handleEndangeredBoard[movePosition[1]][movePosition[0]] = endangered;
+        } else {
+          if (piece.color === "white") {
+            let diagonals = [
+              [1, -1],
+              [-1, -1],
+            ];
+
+            pawnEndangered(diagonals);
+          } else {
+            let diagonals = [
+              [-1, 1],
+              [1, 1],
+            ];
+
+            pawnEndangered(diagonals);
+          }
+        }
       }
     }
 
     setBoard(handleBoard);
+    setEndangeredBoard(handleEndangeredBoard);
   }
+
+  console.log("board", board);
 
   function makeMove(positionMove) {
     clearMoves();
+    clearEndangered();
 
     let piece =
       board[positionMove.piecePosition[1]][positionMove.piecePosition[0]];
@@ -425,8 +505,9 @@ export function ChessProvider({ children }) {
 
   function selectPiece(piece) {
     let pieceName = piece.name;
-
     clearMoves();
+
+    verifyEndangereds();
 
     switch (pieceName) {
       case "pawn":
@@ -452,6 +533,7 @@ export function ChessProvider({ children }) {
 
   useEffect(() => {
     mountBoard();
+    buildEndangeredBoard();
   }, []);
 
   function thereIsEscape(position) {
@@ -486,18 +568,19 @@ export function ChessProvider({ children }) {
       let handleBoard = [...board];
       handleBoard[check.checkPosition[1]][check.checkPosition[0]].check = true;
       setBoard(handleBoard);
-
     } else {
       let handleBoard = [...board];
-      
+
       if (check.checkPosition.length !== 0) {
-        handleBoard[check.checkPosition[1]][check.checkPosition[0]].check = false
+        handleBoard[check.checkPosition[1]][
+          check.checkPosition[0]
+        ].check = false;
         setBoard(handleBoard);
       }
     }
   }, [check]);
 
-  console.log(check);
+  console.log("endangered", endangeredBoard);
 
   return (
     <ChessContext.Provider
@@ -509,7 +592,8 @@ export function ChessProvider({ children }) {
         clearBoard,
         addPiece,
         board,
-        check
+        check,
+        endangeredBoard,
       }}
     >
       {children}
