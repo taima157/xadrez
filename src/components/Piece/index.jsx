@@ -16,7 +16,7 @@ import kingwhite from "../../assets/king-white.png";
 import kingblack from "../../assets/king-black.png";
 
 export default function Piece({ piece }) {
-  const { selectPiece } = useContext(ChessContext);
+  const { selectPiece, check } = useContext(ChessContext);
 
   const piecesImages = {
     pawnwhite,
@@ -32,6 +32,18 @@ export default function Piece({ piece }) {
     kingwhite,
     kingblack,
   };
+
+  if (piece.check && check.isCheck) {
+    return (
+      <div className="Piece red"
+      onClick={() => {
+        console.log(selectPiece(piece))
+        selectPiece(piece)
+      }}>
+        <img src={piecesImages[`${piece.name}${piece.color}`]} alt="piece" />
+      </div>
+    );
+  }
 
   return (
     <div

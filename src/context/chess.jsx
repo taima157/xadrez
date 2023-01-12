@@ -68,6 +68,24 @@ export function ChessProvider({ children }) {
 
   const [board, setBoard] = useState([]);
 
+  const [check, setCheck] = useState({
+    isCheck: false,
+    checkPosition: [],
+  });
+
+  function verifyCheck() {
+    setCheck({ ...check, isCheck: false });
+
+    board.forEach((row) => {
+      row.forEach((item) => {
+        if (item.type === "piece") {
+          selectPiece(item);
+          clearMoves();
+        }
+      });
+    });
+  }
+
   function setPieces(array) {
     let handleArray = array;
 
@@ -122,6 +140,10 @@ export function ChessProvider({ children }) {
         if (square.type !== "move") {
           board[rindex][cindex] = square;
           board[rindex][cindex].select = false;
+
+          if (!check.isCheck && board[rindex][cindex].name == "king") {
+            board[rindex][cindex].check = false;
+          }
         } else {
           if (square.pieceOnCapture) {
             board[rindex][cindex] = square.pieceOnCapture;
@@ -182,6 +204,19 @@ export function ChessProvider({ children }) {
           handleBoard[movePosition[1]][movePosition[0]].pieceOnCapture =
             pieceOnCapture;
 
+          if (
+            handleBoard[movePosition[1]][movePosition[0]].pieceOnCapture
+              .name === "king" &&
+            handleBoard[movePosition[1]][movePosition[0]].color !== piece.color
+          ) {
+            setCheck({
+              ...check,
+              isCheck: true,
+              checkPosition: [movePosition[0], movePosition[1]],
+            });
+            return "check";
+          }
+
           if (piece.name !== "pawn") {
             return true;
           }
@@ -206,6 +241,8 @@ export function ChessProvider({ children }) {
 
     removePiece(positionMove.piecePosition);
     addPiece(piece);
+
+    verifyCheck();
   }
 
   function addPiece(piece) {
@@ -236,7 +273,7 @@ export function ChessProvider({ children }) {
             piece.position[1] + diagonal[1],
           ]).isOccupied
         ) {
-          movement(piece, diagonal[0], diagonal[1]);
+          return movement(piece, diagonal[0], diagonal[1]);
         }
       }
     });
@@ -417,6 +454,51 @@ export function ChessProvider({ children }) {
     mountBoard();
   }, []);
 
+  function thereIsEscape(position) {
+    let around = [
+      [1, 0],
+      [-1, 0],
+      [0, 1],
+      [0, -1],
+      [1, -1],
+      [1, 1],
+      [-1, 1],
+      [-1, -1],
+    ];
+
+    return around.filter((pos) => {
+      if (
+        isInsideTheBoard(position[0] + pos[0]) &&
+        isInsideTheBoard(position[1] + pos[1])
+      ) {
+        if (
+          !occupiedSquare([position[0] + pos[0], position[1] + pos[1]])
+            .isOccupied
+        ) {
+          return true;
+        }
+      }
+    });
+  }
+
+  useEffect(() => {
+    if (check.isCheck) {
+      let handleBoard = [...board];
+      handleBoard[check.checkPosition[1]][check.checkPosition[0]].check = true;
+      setBoard(handleBoard);
+
+    } else {
+      let handleBoard = [...board];
+      
+      if (check.checkPosition.length !== 0) {
+        handleBoard[check.checkPosition[1]][check.checkPosition[0]].check = false
+        setBoard(handleBoard);
+      }
+    }
+  }, [check]);
+
+  console.log(check);
+
   return (
     <ChessContext.Provider
       value={{
@@ -427,6 +509,7 @@ export function ChessProvider({ children }) {
         clearBoard,
         addPiece,
         board,
+        check
       }}
     >
       {children}
