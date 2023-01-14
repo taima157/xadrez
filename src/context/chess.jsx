@@ -73,6 +73,8 @@ export function ChessProvider({ children }) {
   const [check, setCheck] = useState({
     isCheck: false,
     checkPosition: [],
+    pieceThatChecked: [],
+    count: 0,
   });
   const [futureCheck, setFutureCheck] = useState({
     isCheck: true,
@@ -230,8 +232,6 @@ export function ChessProvider({ children }) {
 
     if (boardName === "board") {
       handleBoard = [...board];
-    } else if (boardName === "nextMovesBoard") {
-      handleBoard = [...nextMovesBoard];
     } else {
       handleBoard = [...endangeredBoard];
     }
@@ -242,10 +242,12 @@ export function ChessProvider({ children }) {
 
     let movePosition = [pieceX + quantX, pieceY + quantY]; // Posição do campo a ser movimentado
 
-    handleBoard[pieceY][pieceX] = {
-      ...handleBoard[pieceY][pieceX],
-      select: true,
-    };
+    if (boardName === "board") {
+      handleBoard[pieceY][pieceX] = {
+        ...handleBoard[pieceY][pieceX],
+        select: true,
+      };
+    }
 
     let action; // Ação que a função irá executar
 
@@ -284,6 +286,18 @@ export function ChessProvider({ children }) {
           }
 
           let pieceOnCapture = handleBoard[movePosition[1]][movePosition[0]]; // Peça a ser capturada
+
+          if (check.isCheck && boardName === "board") {
+            if (
+              pieceOnCapture.position[0] !== check.pieceThatChecked[0] &&
+              pieceOnCapture.position[1] !== check.pieceThatChecked[1]
+            ) {
+              return {
+                stop: true,
+              };
+            }
+          }
+
           handleBoard[movePosition[1]][movePosition[0]] = action;
 
           if (boardName !== "endangeredBoard") {
@@ -302,12 +316,8 @@ export function ChessProvider({ children }) {
                   ...check,
                   isCheck: true,
                   checkPosition: [movePosition[0], movePosition[1]],
-                });
-              } else {
-                setFutureCheck({
-                  ...futureCheck,
-                  isCheck: true,
-                  checkPosition: [movePosition[0], movePosition[1]],
+                  pieceThatChecked: piece.position,
+                  count: check.count + 1
                 });
               }
               return {
@@ -319,16 +329,11 @@ export function ChessProvider({ children }) {
                 setCheck({
                   ...check,
                   isCheck: false,
-                  checkPosition: [movePosition[0], movePosition[1]],
-                });
-              } else {
-                setFutureCheck({
-                  ...futureCheck,
-                  isCheck: false,
-                  checkPosition: [movePosition[0], movePosition[1]],
+                  checkPosition: [],
+                  pieceThatChecked: [],
+                  count: 0
                 });
               }
-
               return {
                 stop: true,
                 isCheck: true,
@@ -349,7 +354,6 @@ export function ChessProvider({ children }) {
               };
             }
           }
-
         } else {
           if (boardName === "endangeredBoard" && piece.name !== "pawn") {
             handleBoard[movePosition[1]][movePosition[0]] = action;
@@ -407,15 +411,83 @@ export function ChessProvider({ children }) {
             pawnEndangered(diagonals);
           }
         } else {
-          handleBoard[movePosition[1]][movePosition[0]] = action;
+          if (check.isCheck && piece.name !== "king") {
+            if (check.checkPosition[0] === check.pieceThatChecked[0]) {
+              let distanceMax = Math.max(
+                check.checkPosition[1],
+                check.pieceThatChecked[1]
+              );
+              let distanceMin = Math.min(
+                check.checkPosition[1],
+                check.pieceThatChecked[1]
+              );
+
+              for (let i = distanceMin; i < distanceMax; i++) {
+                if (
+                  movePosition[1] === i &&
+                  movePosition[0] === check.checkPosition[0]
+                ) {
+                  handleBoard[movePosition[1]][movePosition[0]] = action;
+                }
+              }
+            } else if (check.checkPosition[1] === check.pieceThatChecked[1]) {
+              let distanceMax = Math.max(
+                check.checkPosition[0],
+                check.pieceThatChecked[0]
+              );
+              let distanceMin = Math.min(
+                check.checkPosition[0],
+                check.pieceThatChecked[0]
+              );
+
+              for (let i = distanceMin; i < distanceMax; i++) {
+                if (
+                  movePosition[0] === i &&
+                  movePosition[1] === check.checkPosition[1]
+                ) {
+                  handleBoard[movePosition[1]][movePosition[0]] = action;
+                }
+              }
+            } else {
+              let distanceMaxX = Math.max(
+                check.checkPosition[0],
+                check.pieceThatChecked[0]
+              );
+              let distanceMinX = Math.min(
+                check.checkPosition[0],
+                check.pieceThatChecked[0]
+              );
+              let distanceMaxY = Math.max(
+                check.checkPosition[1],
+                check.pieceThatChecked[1]
+              );
+              let distanceMinY = Math.min(
+                check.checkPosition[1],
+                check.pieceThatChecked[1]
+              );
+
+              for (let x = distanceMinX; x < distanceMaxX; x++) {
+                for (let y = distanceMinY; y < distanceMaxY; y++) {
+                  if (movePosition[0] === x && movePosition[1] === y) {
+                    if (
+                      endangeredBoard[movePosition[1]][movePosition[0]].type ===
+                      "endangered"
+                    ) {
+                      handleBoard[movePosition[1]][movePosition[0]] = action;
+                    }
+                  }
+                }
+              }
+            }
+          } else {
+            handleBoard[movePosition[1]][movePosition[0]] = action;
+          }
         }
       }
     }
 
     if (boardName === "board") {
       setBoard(handleBoard);
-    } else if (boardName === "nextMovesBoard") {
-      setNextMovesBoard(handleBoard);
     } else {
       setEndangeredBoard(handleBoard);
     }
@@ -425,8 +497,7 @@ export function ChessProvider({ children }) {
     };
   }
 
-  console.log("check", check);
-  console.log("future check", futureCheck);
+  console.log(check)
 
   function makeMove(positionMove) {
     clearEndangered();
@@ -687,7 +758,7 @@ export function ChessProvider({ children }) {
   }
 
   function selectPiece(piece, boardName) {
-    if (piece.color !== turn) {
+    if (piece.color !== turn && boardName == "board") {
       return;
     }
 
@@ -696,27 +767,19 @@ export function ChessProvider({ children }) {
 
     switch (pieceName) {
       case "pawn":
-        pawnMove(piece, boardName);
-        break;
+        return pawnMove(piece, boardName);
       case "knight":
-        knightMove(piece, boardName);
-        break;
+        return knightMove(piece, boardName);
       case "bishop":
-        bishopMove(piece, boardName);
-        break;
+        return bishopMove(piece, boardName);
       case "queen":
-        queenMove(piece, boardName);
-        break;
+        return queenMove(piece, boardName);
       case "rook":
-        rookMove(piece, boardName);
-        break;
+        return rookMove(piece, boardName);
       case "king":
-        kingMove(piece, boardName);
-        break;
+        return kingMove(piece, boardName);
     }
   }
-
-  function makeFutureMove(movement) {}
 
   useEffect(() => {
     mountBoard();
