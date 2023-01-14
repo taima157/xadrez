@@ -20,7 +20,7 @@ export default function Movement({ movement }) {
   } else {
     return (
       <div className="Movement" onClick={() => makeMove(movement)}>
-        <img src={circle} alt="circle" className="circle" />
+        <div className="circle"></div>
       </div>
     );
   }

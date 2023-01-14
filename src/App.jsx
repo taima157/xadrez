@@ -110,7 +110,7 @@ function App() {
           return (
             <div key={rindex} className="row-danger">
               {row.map((item, cindex) => {
-                return <div key={cindex} className="danger-item">{item.color}</div>;
+                return <div key={cindex} className={`danger-item danger-${item.color}`}>{item.color}</div>;
               })}
             </div>
           );

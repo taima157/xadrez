@@ -38,7 +38,7 @@ export default function Piece({ piece }) {
       <div
         className="Piece red"
         onClick={() => {
-          selectPiece(piece);
+          selectPiece(piece, "board");
         }}
       >
         <img src={piecesImages[`${piece.name}${piece.color}`]} alt="piece" />
@@ -49,9 +49,9 @@ export default function Piece({ piece }) {
   return (
     <div
       className={`Piece ${piece.select ? "piece-select" : ""}`}
-      onClick={() => selectPiece(piece)}
+      onClick={() => selectPiece(piece, "board")}
     >
-      <img src={piecesImages[`${piece.name}${piece.color}`]} alt="piece" />
+      <img src={piecesImages[`${piece.name}${piece.color}`]} alt={piece.name} />
     </div>
   );
 }

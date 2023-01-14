@@ -7,6 +7,7 @@
   display: flex;
   flex-direction: column;
   gap: 5px;
+  user-select: none;
 }
 
 .top-board {
@@ -57,21 +58,37 @@
 }
 
 .board-danger {
-  width: 300px;
-  height: 300px;
+  width: 402px;
+  height: 402px;
   display: flex;
   flex-direction: column;
+  background-color: #ff8229;
+  border: 1px solid #000;
 }
 
 .row-danger {
   width: 100%;
-  height: 37px;
+  height: 50px;
   display: flex;
 }
 
 .danger-item {
-  height: 37px;
-  width: 37px;
+  height: 50px;
+  width: 50px;
   border: 1px solid black;
   font-size: 12px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-transform: uppercase;
+}
+
+.danger-white {
+  background-color: #f5f5f5;
+}
+
+.danger-black {
+  background-color: #1b1b1b;
+  color: #FFF;
 }
