@@ -493,15 +493,15 @@ export function ChessProvider({ children }) {
 
         for (let i = 1; i < 3; i++) {
           if (!top) {
-            // if (
-            //   occupiedSquare([piece.position[0], piece.position[1] - i])
-            //     .isOccupied &&
-            //   occupiedSquare([piece.position[0], piece.position[1] - i])
-            //     .color !== piece.color
-            // ) {
-            //   top = true;
-            //   return;
-            // }
+            if (
+              occupiedSquare([piece.position[0], piece.position[1] - i])
+                .isOccupied &&
+              occupiedSquare([piece.position[0], piece.position[1] - i])
+                .color !== piece.color
+            ) {
+              top = true;
+              return;
+            }
 
             let result = showMoves(piece, 0, -i, boardName);
             top = result?.stop;
