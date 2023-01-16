@@ -68,7 +68,6 @@ export function ChessProvider({ children }) {
 
   const [turn, setTurn] = useState("white");
   const [board, setBoard] = useState([]);
-  const [nextMovesBoard, setNextMovesBoard] = useState([]);
   const [endangeredBoard, setEndangeredBoard] = useState([]);
   const [check, setCheck] = useState({
     isCheck: false,
@@ -76,10 +75,7 @@ export function ChessProvider({ children }) {
     pieceThatChecked: [],
     count: 0,
   });
-  const [futureCheck, setFutureCheck] = useState({
-    isCheck: true,
-    checkPosition: [],
-  });
+  const [checkCount, setCheckCount] = useState(0);
 
   function verifyEndangereds() {
     clearEndangered();
@@ -100,8 +96,8 @@ export function ChessProvider({ children }) {
 
     board.forEach((row) => {
       row.forEach((item) => {
-        if (item.type === "piece") {
-          selectPiece(item, "board");
+        if (item.type === "piece" && item.color === turn) {
+          selectPiece(item, "board", "verify");
           clearMoves();
         }
       });
@@ -227,8 +223,9 @@ export function ChessProvider({ children }) {
     }
   }
 
-  function showMoves(piece, quantX, quantY, boardName) {
+  function showMoves(piece, quantX, quantY, boardName, verifyType) {
     let handleBoard; // Cópia do tabuleiro passado nos parâmetros
+    let verify = verifyType === "verify" ? true : false;
 
     if (boardName === "board") {
       handleBoard = [...board];
@@ -251,7 +248,7 @@ export function ChessProvider({ children }) {
 
     let action; // Ação que a função irá executar
 
-    if (boardName === "board" || boardName === "nextMovesBoard") {
+    if (boardName === "board") {
       action = {
         name: "o",
         type: "move",
@@ -289,9 +286,10 @@ export function ChessProvider({ children }) {
 
           if (check.isCheck && boardName === "board") {
             if (
-              pieceOnCapture.position[0] !== check.pieceThatChecked[0] &&
-              pieceOnCapture.position[1] !== check.pieceThatChecked[1]
+              pieceOnCapture.position[0] === check.pieceThatChecked[0] &&
+              pieceOnCapture.position[1] === check.pieceThatChecked[1]
             ) {
+            } else {
               return {
                 stop: true,
               };
@@ -317,7 +315,6 @@ export function ChessProvider({ children }) {
                   isCheck: true,
                   checkPosition: [movePosition[0], movePosition[1]],
                   pieceThatChecked: piece.position,
-                  count: check.count + 1
                 });
               }
               return {
@@ -331,7 +328,6 @@ export function ChessProvider({ children }) {
                   isCheck: false,
                   checkPosition: [],
                   pieceThatChecked: [],
-                  count: 0
                 });
               }
               return {
@@ -411,76 +407,36 @@ export function ChessProvider({ children }) {
             pawnEndangered(diagonals);
           }
         } else {
-          if (check.isCheck && piece.name !== "king") {
-            if (check.checkPosition[0] === check.pieceThatChecked[0]) {
-              let distanceMax = Math.max(
-                check.checkPosition[1],
-                check.pieceThatChecked[1]
-              );
-              let distanceMin = Math.min(
-                check.checkPosition[1],
-                check.pieceThatChecked[1]
-              );
+          if (check.isCheck && piece.name !== "king" && !verify) {
+            if (
+              squareBetween(
+                movePosition,
+                check.checkPosition,
+                check.pieceThatChecked
+              )?.itsBetween
+            ) {
+              handleBoard[movePosition[1]][movePosition[0]] = action;
+            }
+          } else {
+            if (!verify && boardName === "board") {
+              let result = nextMove(piece);
 
-              for (let i = distanceMin; i < distanceMax; i++) {
+              if (result.between) {
+                handleBoard[movePosition[1]][movePosition[0]] = action;
+              } else {
                 if (
-                  movePosition[1] === i &&
-                  movePosition[0] === check.checkPosition[0]
-                ) {
-                  handleBoard[movePosition[1]][movePosition[0]] = action;
-                }
-              }
-            } else if (check.checkPosition[1] === check.pieceThatChecked[1]) {
-              let distanceMax = Math.max(
-                check.checkPosition[0],
-                check.pieceThatChecked[0]
-              );
-              let distanceMin = Math.min(
-                check.checkPosition[0],
-                check.pieceThatChecked[0]
-              );
-
-              for (let i = distanceMin; i < distanceMax; i++) {
-                if (
-                  movePosition[0] === i &&
-                  movePosition[1] === check.checkPosition[1]
+                  squareBetween(
+                    movePosition,
+                    result.itsBetween.kingPosition,
+                    result.itsBetween.pieceThatChecked
+                  )?.itsBetween
                 ) {
                   handleBoard[movePosition[1]][movePosition[0]] = action;
                 }
               }
             } else {
-              let distanceMaxX = Math.max(
-                check.checkPosition[0],
-                check.pieceThatChecked[0]
-              );
-              let distanceMinX = Math.min(
-                check.checkPosition[0],
-                check.pieceThatChecked[0]
-              );
-              let distanceMaxY = Math.max(
-                check.checkPosition[1],
-                check.pieceThatChecked[1]
-              );
-              let distanceMinY = Math.min(
-                check.checkPosition[1],
-                check.pieceThatChecked[1]
-              );
-
-              for (let x = distanceMinX; x < distanceMaxX; x++) {
-                for (let y = distanceMinY; y < distanceMaxY; y++) {
-                  if (movePosition[0] === x && movePosition[1] === y) {
-                    if (
-                      endangeredBoard[movePosition[1]][movePosition[0]].type ===
-                      "endangered"
-                    ) {
-                      handleBoard[movePosition[1]][movePosition[0]] = action;
-                    }
-                  }
-                }
-              }
+              handleBoard[movePosition[1]][movePosition[0]] = action;
             }
-          } else {
-            handleBoard[movePosition[1]][movePosition[0]] = action;
           }
         }
       }
@@ -497,7 +453,133 @@ export function ChessProvider({ children }) {
     };
   }
 
-  console.log(check)
+  function squareBetween(movePosition, kingPosition, pieceThatChecked) {
+    let sumMovePosition = movePosition[0] + movePosition[1];
+    let sumKingPosition = kingPosition[0] + kingPosition[1];
+    let sumPieceThatChecked = pieceThatChecked[0] + pieceThatChecked[1];
+
+    if (
+      (sumMovePosition > sumPieceThatChecked &&
+        sumMovePosition < sumKingPosition) ||
+      (sumMovePosition < sumPieceThatChecked &&
+        sumMovePosition > sumKingPosition)
+    ) {
+    } else {
+      return {
+        itsBetween: false,
+      };
+    }
+
+    let pos1 = Array.prototype.concat(movePosition, 1, movePosition);
+    let pos2 = Array.prototype.concat(kingPosition, 1, kingPosition);
+    let pos3 = Array.prototype.concat(pieceThatChecked, 1, pieceThatChecked);
+
+    let mainDiagonal = 0;
+    let secundaryDiagonal = 0;
+
+    for (let i = 0; i < 3; i++) {
+      mainDiagonal += pos1[i] * pos2[i + 1] * pos3[i + 2];
+    }
+
+    for (let i = 4; i > 1; i--) {
+      secundaryDiagonal += pos1[i] * pos2[i - 1] * pos3[i - 2];
+    }
+
+    if (mainDiagonal - secundaryDiagonal === 0) {
+      return {
+        itsBetween: true,
+        piecePosition: movePosition,
+        kingPosition,
+        pieceThatChecked,
+      };
+    } else {
+      return {
+        itsBetween: false,
+      };
+    }
+  }
+
+  function nextMove(piece) {
+    const results = [];
+
+    let king;
+
+    board.forEach((row) => {
+      row.forEach((item) => {
+        if (item.name === "king" && item.color === piece.color) {
+          king = item;
+        }
+      });
+    });
+
+    let itsBetween;
+
+    board.forEach((row) => {
+      row.forEach((item) => {
+        if (
+          item.type === "piece" &&
+          item.color !== piece.color &&
+          item.name !== "pawn"
+        ) {
+          let result = squareBetween(
+            piece.position,
+            king.position,
+            item.position
+          );
+          if (result.itsBetween) {
+            itsBetween = result;
+            return;
+          }
+          results.push(
+            squareBetween(piece.position, king.position, item.position)
+          );
+        }
+      });
+    });
+
+    let anotherItsBetween = [];
+
+    if (itsBetween?.itsBetween) {
+      board.forEach((row) => {
+        row.forEach((item) => {
+          if (
+            item.type === "piece" &&
+            item.color === piece.color &&
+            item.name !== "pawn"
+          ) {
+            let result = squareBetween(
+              item.position,
+              itsBetween.kingPosition,
+              itsBetween.pieceThatChecked
+            );
+
+            if (result.itsBetween) {
+              anotherItsBetween.push(result);
+            }
+          }
+        });
+      });
+    }
+
+    if (anotherItsBetween.length > 1) {
+      return {
+        between: true,
+        itsBetween,
+      };
+    } else {
+      if (itsBetween === undefined) {
+        return {
+          between: true,
+          itsBetween,
+        };
+      } else {
+        return {
+          between: false,
+          itsBetween,
+        };
+      }
+    }
+  }
 
   function makeMove(positionMove) {
     clearEndangered();
@@ -537,7 +619,7 @@ export function ChessProvider({ children }) {
     setBoard(handleBoard);
   }
 
-  function pawnCapture(piece, diagonals, boardName) {
+  function pawnCapture(piece, diagonals, boardName, verify) {
     diagonals.forEach((diagonal) => {
       if (
         isInsideTheBoard(piece.position[0] + diagonal[0]) &&
@@ -549,13 +631,13 @@ export function ChessProvider({ children }) {
             piece.position[1] + diagonal[1],
           ]).isOccupied
         ) {
-          return showMoves(piece, diagonal[0], diagonal[1], boardName);
+          return showMoves(piece, diagonal[0], diagonal[1], boardName, verify);
         }
       }
     });
   }
 
-  function pawnMove(piece, boardName) {
+  function pawnMove(piece, boardName, verify) {
     let results = [];
 
     if (piece.color === "white") {
@@ -574,7 +656,7 @@ export function ChessProvider({ children }) {
               return;
             }
 
-            let result = showMoves(piece, 0, -i, boardName);
+            let result = showMoves(piece, 0, -i, boardName, verify);
             top = result?.stop;
             results.push(result);
           }
@@ -585,7 +667,7 @@ export function ChessProvider({ children }) {
             !occupiedSquare([piece.position[0], piece.position[1] - 1])
               .isOccupied
           ) {
-            let result = showMoves(piece, 0, -1, boardName);
+            let result = showMoves(piece, 0, -1, boardName, verify);
             results.push(result);
           }
         }
@@ -595,7 +677,7 @@ export function ChessProvider({ children }) {
         [-1, -1],
       ];
 
-      let result = pawnCapture(piece, diagonals, boardName);
+      let result = pawnCapture(piece, diagonals, boardName, verify);
       results.push(result);
     } else {
       if (piece.position[1] === 1) {
@@ -614,7 +696,7 @@ export function ChessProvider({ children }) {
           }
 
           if (!bottom) {
-            let result = showMoves(piece, 0, i, boardName);
+            let result = showMoves(piece, 0, i, boardName, verify);
             bottom = result?.stop;
             results.push(result);
           }
@@ -625,7 +707,7 @@ export function ChessProvider({ children }) {
             !occupiedSquare([piece.position[0], piece.position[1] + 1])
               .isOccupied
           ) {
-            let result = showMoves(piece, 0, 1, boardName);
+            let result = showMoves(piece, 0, 1, boardName, verify);
             results.push(result);
           }
         }
@@ -636,14 +718,14 @@ export function ChessProvider({ children }) {
         [1, 1],
       ];
 
-      let result = pawnCapture(piece, diagonals, boardName);
+      let result = pawnCapture(piece, diagonals, boardName, verify);
       results.push(result);
     }
 
     return results;
   }
 
-  function knightMove(piece, boardName) {
+  function knightMove(piece, boardName, verify) {
     const movesPosition = [
       [2, 1],
       [-2, 1],
@@ -656,11 +738,12 @@ export function ChessProvider({ children }) {
     ];
 
     movesPosition.forEach((position) => {
-      return showMoves(piece, position[0], position[1], boardName)?.isCheck;
+      return showMoves(piece, position[0], position[1], boardName, verify)
+        ?.isCheck;
     });
   }
 
-  function bishopMove(piece, boardName) {
+  function bishopMove(piece, boardName, verify) {
     let results = [];
     let topRight = false;
     let bottomRight = false;
@@ -669,25 +752,25 @@ export function ChessProvider({ children }) {
 
     for (let i = 1; i < board.length + 1; i++) {
       if (!topRight) {
-        let result = showMoves(piece, i, -i, boardName);
+        let result = showMoves(piece, i, -i, boardName, verify);
         topRight = result?.stop;
         results.push(result);
       }
 
       if (!bottomRight) {
-        let result = showMoves(piece, i, i, boardName);
+        let result = showMoves(piece, i, i, boardName, verify);
         bottomRight = result?.stop;
         results.push(result);
       }
 
       if (!topLeft) {
-        let result = showMoves(piece, -i, i, boardName);
+        let result = showMoves(piece, -i, i, boardName, verify);
         topLeft = result?.stop;
         results.push(result);
       }
 
       if (!bottomLeft) {
-        let result = showMoves(piece, -i, -i, boardName);
+        let result = showMoves(piece, -i, -i, boardName, verify);
         bottomLeft = result?.stop;
         results.push(result);
       }
@@ -696,7 +779,7 @@ export function ChessProvider({ children }) {
     return results;
   }
 
-  function rookMove(piece, boardName) {
+  function rookMove(piece, boardName, verify) {
     let results = [];
     let top = false;
     let bottom = false;
@@ -705,25 +788,25 @@ export function ChessProvider({ children }) {
 
     for (let i = 1; i < board.length + 1; i++) {
       if (!top) {
-        let result = showMoves(piece, 0, -i, boardName);
+        let result = showMoves(piece, 0, -i, boardName, verify);
         top = result?.stop;
         results.push(result);
       }
 
       if (!bottom) {
-        let result = showMoves(piece, 0, i, boardName);
+        let result = showMoves(piece, 0, i, boardName, verify);
         bottom = result?.stop;
         results.push(result);
       }
 
       if (!left) {
-        let result = showMoves(piece, -i, 0, boardName);
+        let result = showMoves(piece, -i, 0, boardName, verify);
         left = result?.stop;
         results.push(result);
       }
 
       if (!right) {
-        let result = showMoves(piece, i, 0, boardName);
+        let result = showMoves(piece, i, 0, boardName, verify);
         right = result?.stop;
         results.push(result);
       }
@@ -732,7 +815,7 @@ export function ChessProvider({ children }) {
     return results;
   }
 
-  function kingMove(piece) {
+  function kingMove(piece, boardName, verify) {
     const movesPosition = [
       [1, 0],
       [-1, 0],
@@ -745,19 +828,19 @@ export function ChessProvider({ children }) {
     ];
 
     movesPosition.forEach((position) => {
-      showMoves(piece, position[0], position[1], "board");
+      showMoves(piece, position[0], position[1], boardName, verify);
     });
   }
 
-  function queenMove(piece, boardName) {
+  function queenMove(piece, boardName, verify) {
     let results = [];
-    results[0] = rookMove(piece, boardName);
-    results[1] = bishopMove(piece, boardName);
+    results[0] = rookMove(piece, boardName, verify);
+    results[1] = bishopMove(piece, boardName, verify);
 
     return results;
   }
 
-  function selectPiece(piece, boardName) {
+  function selectPiece(piece, boardName, verify) {
     if (piece.color !== turn && boardName == "board") {
       return;
     }
@@ -767,17 +850,17 @@ export function ChessProvider({ children }) {
 
     switch (pieceName) {
       case "pawn":
-        return pawnMove(piece, boardName);
+        return pawnMove(piece, boardName, verify);
       case "knight":
-        return knightMove(piece, boardName);
+        return knightMove(piece, boardName, verify);
       case "bishop":
-        return bishopMove(piece, boardName);
+        return bishopMove(piece, boardName, verify);
       case "queen":
-        return queenMove(piece, boardName);
+        return queenMove(piece, boardName, verify);
       case "rook":
-        return rookMove(piece, boardName);
+        return rookMove(piece, boardName, verify);
       case "king":
-        return kingMove(piece, boardName);
+        return kingMove(piece, boardName, verify);
     }
   }
 
