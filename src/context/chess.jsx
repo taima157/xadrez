@@ -287,8 +287,9 @@ export function ChessProvider({ children }) {
 
           if (check.isCheck && boardName === "board") {
             if (
-              pieceOnCapture.position[0] === check.pieceThatChecked[0] &&
-              pieceOnCapture.position[1] === check.pieceThatChecked[1]
+              pieceOnCapture.position[0] ===
+                check.pieceThatChecked.position[0] &&
+              pieceOnCapture.position[1] === check.pieceThatChecked.position[1]
             ) {
             } else {
               return {
@@ -299,6 +300,7 @@ export function ChessProvider({ children }) {
 
           if (!verify && boardName === "board") {
             let result = nextMove(piece);
+            console.log(result);
 
             if (result.between) {
               handleBoard[movePosition[1]][movePosition[0]] = action;
@@ -360,7 +362,7 @@ export function ChessProvider({ children }) {
             }
           }
         } else {
-          if (boardName === "endangeredBoard" && piece.name !== "pawn") {
+          if (boardName === "endangeredBoard") {
             handleBoard[movePosition[1]][movePosition[0]] = action;
 
             if (handleBoard[movePosition[1]][movePosition[0]] !== "king") {
@@ -390,31 +392,8 @@ export function ChessProvider({ children }) {
           }
         }
 
-        function pawnEndangered(diagonals) {
-          diagonals.forEach((diagonal) => {
-            if (
-              isInsideTheBoard(pieceX + diagonal[0]) &&
-              isInsideTheBoard(pieceY + diagonal[1])
-            ) {
-              handleBoard[pieceY + diagonal[1]][pieceX + diagonal[0]] = action;
-            }
-          });
-        }
-
         if (boardName === "endangeredBoard" && piece.name === "pawn") {
-          if (piece.color === "white") {
-            let diagonals = [
-              [-1, -1],
-              [1, -1],
-            ];
-            pawnEndangered(diagonals);
-          } else {
-            let diagonals = [
-              [-1, 1],
-              [1, 1],
-            ];
-            pawnEndangered(diagonals);
-          }
+          handleBoard[movePosition[1]][movePosition[0]] = action;
         } else {
           if (check.isCheck && piece.name !== "king" && !verify) {
             let pieceMovePosition = {
@@ -490,7 +469,7 @@ export function ChessProvider({ children }) {
         kingPosition[0] + p[0] === checkedPosition[0] &&
         kingPosition[1] + p[1] === checkedPosition[1]
       ) {
-        around = true        
+        around = true;
       }
     });
 
@@ -505,24 +484,38 @@ export function ChessProvider({ children }) {
         piecePosition[0] === kingPosition[0] &&
         piecePosition[0] === checkedPosition[0]
       ) {
-        return {
-          itsBetween: true,
-          piece,
-          king,
-          pieceThatChecked,
-        };
+        if (
+          (piecePosition[1] > kingPosition[1] &&
+            piecePosition[1] < checkedPosition[1]) ||
+          (piecePosition[1] < kingPosition[1] &&
+            piecePosition[1] > checkedPosition[1])
+        ) {
+          return {
+            itsBetween: true,
+            piece,
+            king,
+            pieceThatChecked,
+          };
+        }
       }
 
       if (
         piecePosition[1] === kingPosition[1] &&
         piecePosition[1] === checkedPosition[1]
       ) {
-        return {
-          itsBetween: true,
-          piece,
-          king,
-          pieceThatChecked,
-        };
+        if (
+          (piecePosition[0] > kingPosition[0] &&
+            piecePosition[0] < checkedPosition[0]) ||
+          (piecePosition[0] < kingPosition[0] &&
+            piecePosition[0] > checkedPosition[0])
+        ) {
+          return {
+            itsBetween: true,
+            piece,
+            king,
+            pieceThatChecked,
+          };
+        }
       }
     }
 
@@ -716,6 +709,12 @@ export function ChessProvider({ children }) {
   }
 
   function pawnCapture(piece, diagonals, boardName, verify) {
+    if (boardName === "endangeredBoard") {
+      diagonals.forEach((diagonal) => {
+        return showMoves(piece, diagonal[0], diagonal[1], boardName, verify);
+      });
+    }
+
     diagonals.forEach((diagonal) => {
       if (
         isInsideTheBoard(piece.position[0] + diagonal[0]) &&
@@ -737,37 +736,40 @@ export function ChessProvider({ children }) {
     let results = [];
 
     if (piece.color === "white") {
-      if (piece.position[1] === 6) {
-        let top = false;
+      if (boardName === "board") {
+        if (piece.position[1] === 6) {
+          let top = false;
 
-        for (let i = 1; i < 3; i++) {
-          if (!top) {
-            if (
-              occupiedSquare([piece.position[0], piece.position[1] - i])
-                .isOccupied &&
-              occupiedSquare([piece.position[0], piece.position[1] - i])
-                .color !== piece.color
-            ) {
-              top = true;
-              return;
+          for (let i = 1; i < 3; i++) {
+            if (!top) {
+              if (
+                occupiedSquare([piece.position[0], piece.position[1] - i])
+                  .isOccupied &&
+                occupiedSquare([piece.position[0], piece.position[1] - i])
+                  .color !== piece.color
+              ) {
+                top = true;
+                return;
+              }
+
+              let result = showMoves(piece, 0, -i, boardName, verify);
+              top = result?.stop;
+              results.push(result);
             }
-
-            let result = showMoves(piece, 0, -i, boardName, verify);
-            top = result?.stop;
-            results.push(result);
           }
-        }
-      } else {
-        if (isInsideTheBoard(piece.position[1] - 1)) {
-          if (
-            !occupiedSquare([piece.position[0], piece.position[1] - 1])
-              .isOccupied
-          ) {
-            let result = showMoves(piece, 0, -1, boardName, verify);
-            results.push(result);
+        } else {
+          if (isInsideTheBoard(piece.position[1] - 1)) {
+            if (
+              !occupiedSquare([piece.position[0], piece.position[1] - 1])
+                .isOccupied
+            ) {
+              let result = showMoves(piece, 0, -1, boardName, verify);
+              results.push(result);
+            }
           }
         }
       }
+
       let diagonals = [
         [1, -1],
         [-1, -1],
@@ -776,35 +778,37 @@ export function ChessProvider({ children }) {
       let result = pawnCapture(piece, diagonals, boardName, verify);
       results.push(result);
     } else {
-      if (piece.position[1] === 1) {
-        let results = [];
-        let bottom = false;
+      if (boardName === "board") {
+        if (piece.position[1] === 1) {
+          let results = [];
+          let bottom = false;
 
-        for (let i = 1; i < 3; i++) {
-          if (
-            occupiedSquare([piece.position[0], piece.position[1] + i])
-              .isOccupied &&
-            occupiedSquare([piece.position[0], piece.position[1] + i]).color !==
-              piece.color
-          ) {
-            bottom = true;
-            return;
-          }
+          for (let i = 1; i < 3; i++) {
+            if (
+              occupiedSquare([piece.position[0], piece.position[1] + i])
+                .isOccupied &&
+              occupiedSquare([piece.position[0], piece.position[1] + i])
+                .color !== piece.color
+            ) {
+              bottom = true;
+              return;
+            }
 
-          if (!bottom) {
-            let result = showMoves(piece, 0, i, boardName, verify);
-            bottom = result?.stop;
-            results.push(result);
+            if (!bottom) {
+              let result = showMoves(piece, 0, i, boardName, verify);
+              bottom = result?.stop;
+              results.push(result);
+            }
           }
-        }
-      } else {
-        if (isInsideTheBoard(piece.position[1] + 1)) {
-          if (
-            !occupiedSquare([piece.position[0], piece.position[1] + 1])
-              .isOccupied
-          ) {
-            let result = showMoves(piece, 0, 1, boardName, verify);
-            results.push(result);
+        } else {
+          if (isInsideTheBoard(piece.position[1] + 1)) {
+            if (
+              !occupiedSquare([piece.position[0], piece.position[1] + 1])
+                .isOccupied
+            ) {
+              let result = showMoves(piece, 0, 1, boardName, verify);
+              results.push(result);
+            }
           }
         }
       }
