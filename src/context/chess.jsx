@@ -204,9 +204,6 @@ export function ChessProvider({ children }) {
 
   function occupiedSquare(position) {
     let square = board[position[1]][position[0]];
-    console.log(square)
-
-
     if (square.length === 0) {
       return {
         isOccupied: false,
@@ -218,8 +215,6 @@ export function ChessProvider({ children }) {
       };
     }
   }
-
-  console.log(board)
 
   function isInsideTheBoard(index) {
     if (index >= 0 && index < board.length) {
@@ -303,22 +298,10 @@ export function ChessProvider({ children }) {
           }
 
           if (!verify && boardName === "board") {
-            console.log(nextMove(piece));
-
             let result = nextMove(piece);
 
             if (result.between) {
               handleBoard[movePosition[1]][movePosition[0]] = action;
-            } else {
-              if (
-                squareBetween(
-                  movePosition,
-                  result.itsBetween.king,
-                  result.itsBetween.pieceThatChecked
-                )?.itsBetween
-              ) {
-                handleBoard[movePosition[1]][movePosition[0]] = action;
-              }
             }
           } else {
             handleBoard[movePosition[1]][movePosition[0]] = action;
@@ -340,7 +323,7 @@ export function ChessProvider({ children }) {
                   ...check,
                   isCheck: true,
                   checkPosition: [movePosition[0], movePosition[1]],
-                  pieceThatChecked: piece.position,
+                  pieceThatChecked: piece,
                 });
               }
               return {
@@ -434,33 +417,27 @@ export function ChessProvider({ children }) {
           }
         } else {
           if (check.isCheck && piece.name !== "king" && !verify) {
+            let pieceMovePosition = {
+              position: movePosition,
+            };
+
+            let king = {
+              position: check.checkPosition,
+            };
+
             if (
-              squareBetween(
-                movePosition,
-                check.checkPosition,
-                check.pieceThatChecked
-              )?.itsBetween
+              pieceIsBetween(pieceMovePosition, king, check.pieceThatChecked)
+                ?.itsBetween
             ) {
               handleBoard[movePosition[1]][movePosition[0]] = action;
             }
           } else {
-            if (!verify && boardName === "board") {
+            if (!verify && boardName === "board" && piece.name !== "king") {
               let result = nextMove(piece);
 
               if (result.between) {
                 handleBoard[movePosition[1]][movePosition[0]] = action;
-              } else {
-                if (
-                  nextMove(
-                    piece,
-                    result.itsBetween.king,
-                    result.itsBetween.pieceThatChecked
-                  )?.itsBetween
-                ) {
-                  handleBoard[movePosition[1]][movePosition[0]] = action;
-                }
               }
-
             } else {
               handleBoard[movePosition[1]][movePosition[0]] = action;
             }
@@ -480,54 +457,6 @@ export function ChessProvider({ children }) {
     };
   }
 
-  console.log(check)
-
-  function squareBetween(movePosition, kingPosition, pieceThatChecked) {
-    let sumMovePosition = movePosition[0] + movePosition[1];
-    let sumKingPosition = kingPosition[0] + kingPosition[1];
-    let sumPieceThatChecked = pieceThatChecked[0] + pieceThatChecked[1];
-
-    if (
-      (sumMovePosition > sumPieceThatChecked &&
-        sumMovePosition < sumKingPosition) ||
-      (sumMovePosition < sumPieceThatChecked &&
-        sumMovePosition > sumKingPosition)
-    ) {
-    } else {
-      return {
-        itsBetween: false,
-      };
-    }
-
-    let pos1 = Array.prototype.concat(movePosition, 1, movePosition);
-    let pos2 = Array.prototype.concat(kingPosition, 1, kingPosition);
-    let pos3 = Array.prototype.concat(pieceThatChecked, 1, pieceThatChecked);
-
-    let mainDiagonal = 0;
-    let secundaryDiagonal = 0;
-
-    for (let i = 0; i < 3; i++) {
-      mainDiagonal += pos1[i] * pos2[i + 1] * pos3[i + 2];
-    }
-
-    for (let i = 4; i > 1; i--) {
-      secundaryDiagonal += pos1[i] * pos2[i - 1] * pos3[i - 2];
-    }
-
-    if (mainDiagonal - secundaryDiagonal === 0) {
-      return {
-        itsBetween: true,
-        piecePosition: movePosition,
-        kingPosition,
-        pieceThatChecked,
-      };
-    } else {
-      return {
-        itsBetween: false,
-      };
-    }
-  }
-
   function pieceIsBetween(piece, king, pieceThatChecked) {
     let piecePosition = piece.position;
     let kingPosition = king.position;
@@ -543,28 +472,58 @@ export function ChessProvider({ children }) {
       };
     }
 
-    if (
-      piecePosition[0] === kingPosition[0] &&
-      piecePosition[0] === checkedPosition[0]
-    ) {
+    const aroundKing = [
+      [1, 0],
+      [-1, 0],
+      [0, 1],
+      [0, -1],
+      [1, -1],
+      [1, 1],
+      [-1, 1],
+      [-1, -1],
+    ];
+
+    let around = false;
+
+    aroundKing.forEach((p) => {
+      if (
+        kingPosition[0] + p[0] === checkedPosition[0] &&
+        kingPosition[1] + p[1] === checkedPosition[1]
+      ) {
+        around = true        
+      }
+    });
+
+    if (around) {
       return {
-        itsBetween: true,
-        piece,
-        king,
-        pieceThatChecked,
+        itsBetween: false,
       };
     }
 
-    if (
-      piecePosition[1] === kingPosition[1] &&
-      piecePosition[1] === checkedPosition[1]
-    ) {
-      return {
-        itsBetween: true,
-        piece,
-        king,
-        pieceThatChecked,
-      };
+    if (pieceThatChecked.name !== "bishop") {
+      if (
+        piecePosition[0] === kingPosition[0] &&
+        piecePosition[0] === checkedPosition[0]
+      ) {
+        return {
+          itsBetween: true,
+          piece,
+          king,
+          pieceThatChecked,
+        };
+      }
+
+      if (
+        piecePosition[1] === kingPosition[1] &&
+        piecePosition[1] === checkedPosition[1]
+      ) {
+        return {
+          itsBetween: true,
+          piece,
+          king,
+          pieceThatChecked,
+        };
+      }
     }
 
     let maxX = Math.max(kingPosition[0], checkedPosition[0]);
@@ -575,11 +534,11 @@ export function ChessProvider({ children }) {
     let xValues = [];
     let yValues = [];
 
-    for (minX; minX < maxX; minX++) {
+    for (minX; minX <= maxX; minX++) {
       xValues.push(minX);
     }
 
-    for (minY; minY < maxY; minY++) {
+    for (minY; minY <= maxY; minY++) {
       yValues.push(minY);
     }
 
@@ -592,15 +551,39 @@ export function ChessProvider({ children }) {
     let between = false;
 
     if (
-      kingPosition[0] === checkedPosition[1] &&
-      kingPosition[1] === checkedPosition[0]
+      (kingPosition[0] > checkedPosition[0] &&
+        kingPosition[1] < checkedPosition[1]) ||
+      (kingPosition[0] < checkedPosition[0] &&
+        kingPosition[1] > checkedPosition[1])
     ) {
       xValues.forEach((x, index) => {
-        if (x === piecePosition[0] && yValues[yValues.length - index] === piecePosition[1]) {
+        if (
+          x === piecePosition[0] &&
+          yValues[yValues.length - index - 1] === piecePosition[1]
+        ) {
           between = true;
         }
       });
-  
+
+      if (between) {
+        return {
+          itsBetween: true,
+          piece,
+          king,
+          pieceThatChecked,
+        };
+      } else {
+        return {
+          itsBetween: false,
+        };
+      }
+    } else {
+      xValues.forEach((x, index) => {
+        if (x === piecePosition[0] && yValues[index] === piecePosition[1]) {
+          between = true;
+        }
+      });
+
       if (between) {
         return {
           itsBetween: true,
@@ -614,30 +597,9 @@ export function ChessProvider({ children }) {
         };
       }
     }
-
-    xValues.forEach((x, index) => {
-      if (x === piecePosition[0] && yValues[index] === piecePosition[1]) {
-        between = true;
-      }
-    });
-
-    if (between) {
-      return {
-        itsBetween: true,
-        piece,
-        king,
-        pieceThatChecked,
-      };
-    } else {
-      return {
-        itsBetween: false,
-      };
-    }
   }
 
   function nextMove(piece) {
-    const results = [];
-
     let king;
 
     board.forEach((row) => {
@@ -663,9 +625,6 @@ export function ChessProvider({ children }) {
             itsBetween = result;
             return;
           }
-          results.push(
-            squareBetween(piece.position, king.position, item.position)
-          );
         }
       });
     });
